@@ -48,98 +48,99 @@ Vérification
 ![Vérification uid=0 root](images/imagesadb_shell_id.png)
 
 ---
+## Étape 3 — Vérifications de l'état du système
 
-Je vérifie l'état du système 
+### État du Verified Boot
 
 ```bash
 adb shell getprop ro.boot.verifiedbootstate
 ```
 
-Vérification 
+Résultat obtenu : `orange`
 
-![État du verified boot](images/imagesverified_boot.png)
+L'état `orange` confirme que le bootloader est déverrouillé et que la vérification d'intégrité du système est désactivée. Sur un appareil de production, cette valeur serait `green`.
+
+Vérification :
+
+![État verifiedbootstate](images/imagesverified_boot.png)
 
 ---
+
+### État de Verity
+
+```bash
+adb shell getprop ro.boot.veritymode
+```
+
+Résultat obtenu : `enforcing`
+
+Verity est encore marqué `enforcing` au niveau de la propriété système, mais il a bien été désactivé par `adb remount` (confirmé par le message `Successfully disabled verity`). Ce décalage est normal sur Android 12+ — la propriété reflète la config initiale, pas l'état runtime.
+
+Vérification :
+
+![État veritymode](images/veritymode.png)
+
+---
+
+### État du vbmeta
+
+```bash
+adb shell getprop ro.boot.vbmeta.device_state
+```
+
+Résultat obtenu : *(vide)*
+
+La valeur vide indique que cette propriété n'est pas définie sur cet émulateur. C'est un comportement attendu sur certaines images AVD qui ne gèrent pas vbmeta de la même façon qu'un device physique.
+
+Vérification :
+
+![État vbmeta device state](images/vbmeta_state.png)
+
+---
+
+### Type de build
+
+```bash
+adb shell getprop ro.build.type
+```
+
+Résultat obtenu : `userdebug`
+
+Le build de type `userdebug` est indispensable pour activer le root via ADB. Un build `user` (production) bloquerait ces opérations.
+
+Vérification :
+
+![Build type userdebug](images/build_type.png)
+
+---
+
+### Débogage activé
+
+```bash
+adb shell getprop ro.debuggable
+```
+
+Résultat obtenu : `1`
+
+La valeur `1` confirme que le mode debug est activé sur cette image, ce qui est cohérent avec le build `userdebug`.
+
+Vérification :
+
+![ro.debuggable = 1](images/debuggable.png)
+
+---
+### Test su (superutilisateur)
 
 Je teste la commande `su` 
 
 ```bash
 adb shell su -c id
 ```
+Résultat obtenu : `su: invalid uid/gid '-c'`
 
-Vérification 
-
-![Test commande su](images/imagessu_test.png)
-
----
-
-## Étape 3  Vérifier l'AVD
-
-```bash
-adb devices
-```
-
-* Vérification 
-
-![Liste des appareils connectés](images/imagesadb_devices.png)
+La commande `su` est présente sur l'émulateur mais son implémentation ne supporte pas le flag `-c` de cette façon. Pour tester les privilèges root dans le shell, utiliser plutôt :
 
 ---
-
-## Étape 4  Installer l'application
-
-```bash
-adb install app-debug.apk
-```
-
-Vérification 
-
-![Installation de l'APK](images/imagesinstall_apk.png)
-
---- 
-## Étape 5 Désactiver Verity 
-
-```bash
-adb disable-verity
-adb reboot
-adb remount
-```
-
-Vérification 
-
-![Désactivation de dm-verity](images/imagesdisable_verity.png)
-
----
-
-## Étape 6  Journalisation
-
-```bash
-adb logcat -d  tail -n 200  logcat_root_check.txt
-```
-
-Vérification 
-
-![Capture des logs logcat](images/imageslogcat.png)
-
----
-
-## Étape 7  Traçabilité
-
-Je vérifie que l'application fonctionne correctement 
-
-Vérification 
-
-![Application fonctionnelle](images/imagesapp_launched.png)
-
----
-
-Je confirme que le root est actif 
-
-Vérification 
-
-![Root confirmé et actif](images/imagesroot_success.png)
-
----
-
 
 
 ## Conclusion
